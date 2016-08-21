@@ -28,9 +28,7 @@ public class DavisBase {
 	
 	
     public static void main(String[] args) {
-    	//Table.initializeDataStore();
     	init();
-    	//Table.initializeDataStore();
 		/* Display the welcome screen */
 		splashScreen();
 
@@ -41,7 +39,6 @@ public class DavisBase {
 			System.out.print(prompt);
 			/* toLowerCase() renders command case insensitive */
 			userCommand = scanner.next().replace("\n", " ").replace("\r", "").trim().toLowerCase();
-			// userCommand = userCommand.replace("\n", "").replace("\r", "");
 			parseUserCommand(userCommand);
 		}
 		System.out.println("Exiting...");
@@ -241,9 +238,6 @@ public class DavisBase {
 					System.out.println();
 					break;
 				}
-				// System.out.println(create_table);
-				// for(String s: create_cols)
-				// 	System.out.println(s);
 				Table.createTable(create_table, create_cols);		
 				break;
 
@@ -273,9 +267,6 @@ public class DavisBase {
 					System.out.println();
 					break;
 				}
-				// System.out.println(insert_table);
-				// for(String s: insert_values)
-				// 	System.out.println(s);
 				Table.insertInto(insert_table, insert_values);
 				break;
 

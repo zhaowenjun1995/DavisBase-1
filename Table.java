@@ -14,9 +14,10 @@ public class Table{
 	private static RandomAccessFile davisbaseTablesCatalog;
 	private static RandomAccessFile davisbaseColumnsCatalog;
 
+	// test case
 	public static void main(String[] args){}
 
-
+	// function to show all tables in the database
 	public static void show(){
 		String[] cols = {"table_name"};
 		String[] cmp = new String[0];
@@ -24,6 +25,8 @@ public class Table{
 		select(table, cols, cmp);
 	}
 
+	// function to drop a particular table
+	// by delete the file of the table and delete meta data in database
 	public static void drop(String table){
 		try{
 			// clear meta-table
@@ -41,7 +44,6 @@ public class Table{
 						long loc = Page.getCellLoc(file, page, j);
 						String[] pl = retrievePayload(file, loc);
 						String tb = pl[1];
-						//System.out.println(tb);
 						if(!tb.equals(table)){
 							Page.setCellOffset(file, page, i, cells[j]);
 							i++;
@@ -66,7 +68,6 @@ public class Table{
 						long loc = Page.getCellLoc(file, page, j);
 						String[] pl = retrievePayload(file, loc);
 						String tb = pl[1];
-						//System.out.println(tb);
 						if(!tb.equals(table)){
 							Page.setCellOffset(file, page, i, cells[j]);
 							i++;
@@ -102,7 +103,6 @@ public class Table{
 			payload = new String[num_cols+1];
 			payload[0] = Integer.toString(key);
 			// get payLoad
-			//file.seek(loc+7+num_cols);
 			for(int i=1; i <= num_cols; i++){
 				switch(stc[i-1]){
 					case 0x00:  payload[i] = Integer.toString(file.readByte());
@@ -168,8 +168,6 @@ public class Table{
 
 	public static void createTable(String table, String[] col){
 		try{	
-			//System.out.println("Creating table "+ table);
-			//System.out.println("Insert record into table");
 			//file
 			RandomAccessFile file = new RandomAccessFile("data/"+table+".tbl", "rw");
 			file.setLength(pageSize);
@@ -179,14 +177,12 @@ public class Table{
 			// table
 			file = new RandomAccessFile("data/davisbase_tables.tbl", "rw");
 			int numPages = pages(file);
-			//System.out.println("davisbase_tables.tbl pages: "+numPages);
 			int page = 1;
 			for(int p = 1; p <= numPages; p++){
 				int rm = Page.getRightMost(file, p);
 				if(rm == 0)
 					page = p;
 			}
-			//System.out.println("davisbase_tables.tbl right most page: "+page);
 			int[] keyArray = Page.getKeyArray(file, page);
 			int l = keyArray[0];
 			for(int i = 0; i < keyArray.length; i++)
@@ -196,50 +192,15 @@ public class Table{
 			String[] values = {Integer.toString(l+1), table};
 			insertInto("davisbase_tables", values);
 
-
-			//System.out.println("Insert record into column");
-			// colums
-			//file = new RandomAccessFile("data/davisbase_columns.tbl", "rw");
-			//numPages = pages(file);
-			//System.out.println("column pages: "+numPages);
-			// page = 1;
-			// for(int p = 1; p <= numPages; p++){
-			// 	int rm = Page.getRightMost(file, p);
-			// 	if(rm == 0)
-			// 		page = p;
-			// }
-			// //System.out.println("target page :"+page);
-			// keyArray = Page.getKeyArray(file, page);
-
-			// if(keyArray.length != 0){
-			// 	l = keyArray[0];
-			// }else{
-			// 	int loc = Page.getCellLoc(file, page, 0);
-			// 	file.seek(loc);
-			// 	l = file.readInt();
-			// 	l = file.readInt();
-			// }
-			//file.close();
-
-			// for(int i = 0; i < keyArray.length; i++)
-			// 	if(l < keyArray[i])
-			// 		l = keyArray[i];
-
-
 			RandomAccessFile cfile = new RandomAccessFile("data/davisbase_columns.tbl", "rw");
 			Buffer buffer = new Buffer();
 			String[] columnName = {"rowid", "table_name", "column_name", "data_type", "ordinal_position", "is_nullable"};
 			String[] cmp = {};
 			filter(cfile, cmp, columnName, buffer);
 			l = buffer.content.size();
-			//System.out.println(l);
 
-
-			//System.out.println("l in column :"+l);
 			for(int i = 0; i < col.length; i++){
-				//System.out.println("in the for loop");
 				l = l + 1;
-				//System.out.println("l in column :"+l);
 				String[] token = col[i].split(" ");
 				String n = "YES";
 				if(token.length > 2)
@@ -268,7 +229,6 @@ public class Table{
 				if(Page.hasKey(file, p, key)){
 					page = p;
 				}
-			//System.out.println("update on page: "+ page);
 			int[] array = Page.getKeyArray(file, page);
 			int id = 0;
 			for(int i = 0; i < array.length; i++)
@@ -278,10 +238,7 @@ public class Table{
 			long loc = Page.getCellLoc(file, page, id);
 			String[] array_s = getColName(table);
 			int num_cols = array_s.length - 1;
-			//String[] values = retrievePayload(file, loc, key, num_cols);
 			String[] values = retrievePayload(file, loc);
-			// for(String s: values)
-			// 	System.out.println(s);
 
 
 			// fix date time type value to string format before update
@@ -296,14 +253,11 @@ public class Table{
 				if(array_s[i].equals(set[0]))
 					id = i;
 			values[id] = set[2];
-			// for(String s: values)
-			// 	System.out.println(s);
 
 			// check null value violation
 			String[] nullable = getNullable(table);
 
 			for(int i = 0; i < nullable.length; i++){
-				//System.out.print(values[i]+" "+nullable[i]);
 				if(values[i].equals("null") && nullable[i].equals("NO")){
 					System.out.println("NULL value constraint violation");
 					System.out.println();
@@ -355,20 +309,16 @@ public class Table{
 			page = 1;
 
 
-		//System.out.println("check point");
 		byte[] stc = new byte[dtype.length-1];
 		short plSize = (short) calPayloadSize(table, values, stc);
 		int cellSize = plSize + 6;
 		int offset = Page.checkLeafSpace(file, page, cellSize);
 
-		//System.out.println("Insert into offset "+offset);
 
 		if(offset != -1){
-			//System.out.println(key+" key write to page :"+page);
 			Page.insertLeafCell(file, page, offset, plSize, key, stc, values);
 			//Page.sortCellArray(file, page);
 		}else{
-			//System.out.println("splite page"+page);
 			Page.splitLeaf(file, page);
 			insertInto(file, table, values);
 		}
@@ -386,6 +336,7 @@ public class Table{
 		}
 	}
 
+	// calculate the payload size
 	public static int calPayloadSize(String table, String[] vals, byte[] stc){
 		String[] dataType = getDataType(table);
 		int size = 1;
@@ -398,7 +349,7 @@ public class Table{
 		return size;
 	}
 
-	//calculate value length by stc
+	//calculate value length by STC code
 	public static short feildLength(byte stc){
 		switch(stc){
 			case 0x00: return 1;
@@ -450,25 +401,19 @@ public class Table{
 
 	public static int searchKey(RandomAccessFile file, int key){
 		int val = 1;
-		//System.out.println("search key "+ key);
 		try{
 			int numPages = pages(file);
-			//System.out.println("num page: "+numPages);
 			for(int page = 1; page <= numPages; page++){
-				//System.out.println("searching page: "+page);
 				file.seek((page - 1)*pageSize);
 				byte pageType = file.readByte();
 				if(pageType == 0x0D){
-					//System.out.println("Page "+page+" is a leaf");
 					int[] keys = Page.getKeyArray(file, page);
 					if(keys.length == 0)
 						return 0;
 					int rm = Page.getRightMost(file, page);
 					if(keys[0] <= key && key <= keys[keys.length - 1]){
-						//System.out.println("Page "+page+" return");
 						return page;
 					}else if(rm == 0 && keys[keys.length - 1] < key){
-						//System.out.println("Page "+page+" return");
 						return page;
 					}
 				}
@@ -554,13 +499,8 @@ public class Table{
 	public static void select(String table, String[] cols, String[] cmp){
 		try{
 			Buffer buffer = new Buffer();
-			//System.out.println("select "+table);
 			String[] columnName = getColName(table);
 			String[] type = getDataType(table);
-			// String test = "";
-			// for(String s: columnName)
-			// 	test = test + s + ", ";
-			// System.out.println(table+": "+test);
 
 			RandomAccessFile file = new RandomAccessFile("data/"+table+".tbl", "rw");
 			filter(file, cmp, columnName, type, buffer);
@@ -591,21 +531,8 @@ public class Table{
 						file.seek(loc+2); // seek to rowid
 						int rowid = file.readInt(); // read rowid
 						int num_cols = new Integer(file.readByte()); // read # of columns other than rowid
-						//String[] payload = new String[num_cols + 1];
-						//String[] payload = retrievePayload(file, loc, rowid, num_cols); // retrieve payLoad and convert to strings
+
 						String[] payload = retrievePayload(file, loc);
-
-						// String test = "";
-						// for(String s: payload)
-						// 	test = test + s +", ";
-						// System.out.println("payload: "+test);
-
-						// fix date time type value to string format in the payload before check
-						// String[] type = getDataType(table);
-						// String test = "";
-						// for(String s: type)
-						// 	test = test + s +", ";
-						// System.out.println("type: "+test);
 
 						for(int j=0; j < type.length; j++)
 							if(type[j].equals("DATE") || type[j].equals("DATETIME"))
@@ -629,7 +556,6 @@ public class Table{
 
 		}catch(Exception e){
 			System.out.println("Error at filter");
-			//System.out.println(e);
 			e.printStackTrace();
 		}
 
@@ -649,19 +575,11 @@ public class Table{
 					byte numCells = Page.getCellNumber(file, page);
 
 					for(int i=0; i < numCells; i++){
-						//System.out.println("check point");
 						long loc = Page.getCellLoc(file, page, i);
 						file.seek(loc+2); // seek to rowid
 						int rowid = file.readInt(); // read rowid
 						int num_cols = new Integer(file.readByte()); // read # of columns other than rowid
-						//String[] payload = new String[num_cols + 1];
-						//String[] payload = retrievePayload(file, loc, rowid, num_cols); // retrieve payLoad and convert to strings
 						String[] payload = retrievePayload(file, loc);
-
-						// String test = "";
-						// for(String s: payload)
-						// 	test = test + s +", ";
-						// System.out.println("payload: "+test);
 
 						boolean check = cmpCheck(payload, rowid, cmp, columnName);
 						if(check)
@@ -675,7 +593,6 @@ public class Table{
 
 		}catch(Exception e){
 			System.out.println("Error at filter");
-			//System.out.println(e);
 			e.printStackTrace();
 		}
 
@@ -693,84 +610,11 @@ public class Table{
 		return num_pages;
 	}
 
-	// retrieve binary payload and parse into list of string, loc is cell location in the file
-	// num_cols is #col other than rowid
-	// public static String[] retrievePayload(RandomAccessFile file, int loc, int rowid, int num_cols){
-	// 	String[] payload = new String[num_cols+1];
-	// 	payload[0] = Integer.toString(rowid);
-	// 	byte[] stc = new byte[num_cols+1];
-	// 	stc[0] = 0;
-
-	// 	try{
-	// 		// get stc
-	// 		file.seek(loc+7);
-	// 		for(int i=1; i <= num_cols; i++){
-	// 			stc[i] = file.readByte();
-	// 		}
-
-	// 		// get payLoad
-	// 		file.seek(loc+7+num_cols);
-	// 		for(int i=1; i <= num_cols; i++){
-	// 			switch(stc[i]){
-	// 				case 0x00:  payload[i] = "null";
-	// 							break;
-
-	// 				case 0x01:  payload[i] = "null";
-	// 							break;
-
-	// 				case 0x02:  payload[i] = "null";
-	// 							break;
-
-	// 				case 0x03:  payload[i] = "null";
-	// 							break;
-
-	// 				case 0x04:  payload[i] = Integer.toString(file.readByte());
-	// 							break;
-
-	// 				case 0x05:  payload[i] = Integer.toString(file.readShort());
-	// 							break;
-
-	// 				case 0x06:  payload[i] = Integer.toString(file.readInt());
-	// 							break;
-
-	// 				case 0x07:  payload[i] = Long.toString(file.readLong());
-	// 							break;
-
-	// 				case 0x08:  payload[i] = String.valueOf(file.readFloat());
-	// 							break;
-
-	// 				case 0x09:  payload[i] = String.valueOf(file.readDouble());
-	// 							break;
-
-	// 				case 0x0A:  payload[i] = "DATETIME";
-	// 							break;
-
-	// 				case 0x0B:  payload[i] = "DATE";
-	// 							break;
-
-	// 				default:    int len = new Integer(stc[i]-0x0C);
-	// 							byte[] bytes = new byte[len];
-	// 							for(int j = 0; j < len; j++)
-	// 								bytes[j] = file.readByte();
-	// 							payload[i] = new String(bytes);
-	// 							break;
-	// 			}
-	// 		}
-
-	// 	}catch(Exception e){
-	// 		System.out.println("Error at retrievePayload2 rowid :"+rowid);
-	// 	}
-
-	// 	return payload;
-	// }
-
 	// check if a row satisfy the filter condition
 	public static boolean cmpCheck(String[] payload, int rowid, String[] cmp, String[] columnName){
 
-		//System.out.println("Checking cmp on row: "+ rowid);
 		boolean check = false;
 		if(cmp.length == 0){
-			//System.out.println("No cmp require");
 			check = true;
 		}else{
 			int colPos = 1;
@@ -782,9 +626,7 @@ public class Table{
 			}
 			String opt = cmp[1];
 			String val = cmp[2];
-			//System.out.println("Cmp is "+cmp[0]+" "+cmp[1]+" "+cmp[2]);
 			if(colPos == 1){
-				//System.out.println("checing rowid");
 				switch(opt){
 					case "=": if(rowid == Integer.parseInt(val)) 
 								check = true;
@@ -818,18 +660,12 @@ public class Table{
 							  break;						  							  							  							
 				}
 			}else{
-				//System.out.println("chech other column");
 				if(val.equals(payload[colPos-1]))
 					check = true;
 				else
 					check = false;
 			}
 		}
-		// if(check)
-		// 	System.out.println("Cmp pass");
-		// else
-		// 	System.out.println("Cmp fail");
-
 		return check;
 	}
 
@@ -1037,46 +873,11 @@ public class Table{
 			davisbaseColumnsCatalog.writeByte(16);
 			davisbaseColumnsCatalog.writeByte(4);
 			davisbaseColumnsCatalog.writeByte(14);
-			//davisbaseColumnsCatalog.writeByte(0);
 			davisbaseColumnsCatalog.writeBytes("davisbase_columns");
 			davisbaseColumnsCatalog.writeBytes("is_nullable");
 			davisbaseColumnsCatalog.writeBytes("TEXT");
 			davisbaseColumnsCatalog.writeByte(6);
 			davisbaseColumnsCatalog.writeBytes("NO");
-			//davisbaseColumnsCatalog.writeByte(0);
-			
-			// davisbaseColumnsCatalog.seek(offset[8]);
-			// davisbaseColumnsCatalog.writeShort(41); // 40
-			// davisbaseColumnsCatalog.writeInt(9); 
-			// davisbaseColumnsCatalog.writeByte(5);
-			// davisbaseColumnsCatalog.writeByte(29);
-			// davisbaseColumnsCatalog.writeByte(22);
-			// davisbaseColumnsCatalog.writeByte(16);
-			// davisbaseColumnsCatalog.writeByte(4);
-			// davisbaseColumnsCatalog.writeByte(15);
-			// //davisbaseColumnsCatalog.writeByte(0);
-			// davisbaseColumnsCatalog.writeBytes("davisbase_columns");
-			// davisbaseColumnsCatalog.writeBytes("column_key");
-			// davisbaseColumnsCatalog.writeBytes("TEXT");
-			// davisbaseColumnsCatalog.writeByte(7);
-			// davisbaseColumnsCatalog.writeBytes("YES");
-			// //davisbaseColumnsCatalog.writeByte(0);
-			
-			// RandomAccessFile ram=davisbaseColumnsCatalog;
-			// System.out.println("Dec\tHex\t 0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F");
-			// ram.seek(0);
-			// long size = ram.length();
-			// int row = 1;
-			// System.out.print("0000\t0x0000\t");
-			// while(ram.getFilePointer() < size) {
-			// 	System.out.print(String.format("%02X ", ram.readByte()));
-			// 	// System.out.print(ram.readByte() + " ");
-			// 	if(row % 16 == 0) {
-			// 		System.out.println();
-			// 		System.out.print(String.format("%04d\t0x%04X\t", row, row));
-			// 	}
-			// 	row++;
-			// }
 		}
 		catch (Exception e) {
 			System.out.println("Unable to create the database_columns file");
@@ -1086,27 +887,26 @@ public class Table{
 }
 
 
-// store and display information
+// store and display retrieved data
 class Buffer{
-	public int num_row;
-	public HashMap<Integer, String[]> content;
-	//public String[] col;
-	public int[] format;
-	public String[] columnName;
+	public int num_row; // number of rows in the buffer
+	public HashMap<Integer, String[]> content; // hash map to store data. Integer represent rowid(key), String[] represent all data of each row
+	public int[] format; // format controller. store display format info -- the length of longest string of each column
+	public String[] columnName; // column name of all columns
 
+	// initializer, 0 row stored and empty content container
 	public Buffer(){
 		num_row = 0;
-		//num_col = num_col;
-		//col_name = new String[num_col];
 		content = new HashMap<Integer, String[]>();
 	}
 
+	// add data into content container. increase stored row number
 	public void add(int rowid, String[] val){
 		content.put(rowid, val);
 		num_row = num_row + 1;
-		// TODO: update format function
 	}
 
+	// update the format controller
 	public void updateFormat(){
 		for(int i = 0; i < format.length; i++)
 			format[i] = columnName[i].length();
@@ -1117,31 +917,35 @@ class Buffer{
 		}
 	}
 
-	public String fix(int len, String s){
+	// make the string s to be fix length of len. filled with space
+	public String fix(int len, String s) {
 		return String.format("%-"+(len+3)+"s", s);
-		//return s;
 	}
 
-	public String line(String s,int num) {
+	// make a length of len using compose with stirng s
+	public String line(String s,int len) {
 		String a = "";
-		for(int i=0;i<num;i++) {
+		for(int i=0;i<len;i++) {
 			a += s;
 		}
 		return a;
 	}
 
-	// display content according to the format
+	// display content according to the format controller. col specify selected columns to display
 	public void display(String[] col){
+		// if the content container if empty, output info
 		if(num_row == 0){
 			System.out.println("Empty set.");
 		}else{
+			// called function to update format controller
 			updateFormat();
+			// if selectd column is "*", means display all columns
 			if(col[0].equals("*")){
 				// print line
 				for(int l: format)
 					System.out.print(line("-", l+3));
 				System.out.println();
-				// print name
+				// print column name
 				for(int j = 0; j < columnName.length; j++)
 					System.out.print(fix(format[j], columnName[j])+"|");
 				System.out.println();
@@ -1156,6 +960,7 @@ class Buffer{
 					System.out.println();
 				}
 				System.out.println();
+			// else output selected column
 			}else{
 				int[] control = new int[col.length];
 				for(int j = 0; j < col.length; j++)
@@ -1166,7 +971,7 @@ class Buffer{
 				for(int j = 0; j < control.length; j++)
 					System.out.print(line("-", format[control[j]]+3));
 				System.out.println();
-				// print name
+				// print column name
 				for(int j = 0; j < control.length; j++)
 					System.out.print(fix(format[control[j]], columnName[control[j]])+"|");
 				System.out.println();

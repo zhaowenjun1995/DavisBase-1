@@ -12,8 +12,6 @@ import java.text.SimpleDateFormat;
 public class Page{
 	public static int pageSize = 512;
 	public static final String datePattern = "yyyy-MM-dd_HH:mm:ss";
-	// private static RandomAccessFile davisbaseTablesCatalog;
-	// private static RandomAccessFile davisbaseColumnsCatalog;
 
 	public static void main(String[] args){}
 
@@ -59,10 +57,6 @@ public class Page{
 		return (short)val;
 	}
 
-	// search key by linear return page #
-	// public static int searchKey(RandomAccessFile file, int key){
-
-	// }
 
 	// make a new Interior page and return the page number
 	public static int makeInteriorPage(RandomAccessFile file){
@@ -107,10 +101,6 @@ public class Page{
 			int numCells = getCellNumber(file, page);
 			// id of mid cell
 			int mid = (int) Math.ceil((double) numCells / 2);
-			// file.seek((page-1)*pageSize+12+mid*2);
-			// short offset = file.readShort(); // get offset of the cell in the page
-			// short start = (short) ((page-1)*pageSize);
-			// short loc = (short) (start + offset);
 			long loc = getCellLoc(file, page, mid-1);
 			file.seek(loc);
 
@@ -142,29 +132,22 @@ public class Page{
 
 			int numCellA = mid - 1;
 			int numCellB = numCells - numCellA;
-			//short content = 512;
 			int content = 512;
 
 			for(int i = numCellA; i < numCells; i++){
 				long loc = getCellLoc(file, curPage, i);
-				//System.out.println("splitLeafPage loc = "+loc);
 				// read cell size
 				file.seek(loc);
-				//short cellSize = (short)(file.readShort() + 6);
 				int cellSize = file.readShort()+6;
-				//System.out.println("rowid "+file.readInt()+" ,cell size "+cellSize);
-				//System.out.println("current content offset is "+content+" on page "+newPage);
 				content = content - cellSize;
 				// read cell data
 				file.seek(loc);
 				byte[] cell = new byte[cellSize];
 				file.read(cell);
 				// write cell data
-				//System.out.println("seeking content offset "+content+" on page "+newPage);
 				file.seek((newPage-1)*pageSize+content);
 				file.write(cell);
 				// fix cell arrary in the new page TODO
-				//short offset = getCellOffset(file, curPage, i);
 				setCellOffset(file, newPage, i - numCellA, content);
 			}
 
@@ -200,7 +183,6 @@ public class Page{
 	public static void splitInteriorPage(RandomAccessFile file, int curPage, int newPage){
 		try{
 			// num cells in cur page
-			//System.out.println("split inter page: "+curPage+" --> "+newPage);
 			int numCells = getCellNumber(file, curPage);
 			// id of mid cell
 			int mid = (int) Math.ceil((double) numCells / 2);
@@ -226,7 +208,6 @@ public class Page{
 				int page = file.readInt();
 				setParent(file, page, newPage);
 				// fix cell arrary in new page
-				//short offset = getCellOffset(file, curPage, i);
 				setCellOffset(file, newPage, i - (numCellA + 1), content);
 			}
 			// fix right most pointer in both page
@@ -262,18 +243,13 @@ public class Page{
 	public static void splitLeaf(RandomAccessFile file, int page){
 		int newPage = makeLeafPage(file);
 		int midKey = findMidKey(file, page);
-		//System.out.println("split leaf: "+page+" --> "+newPage);
 		splitLeafPage(file, page, newPage);
 		int parent = getParent(file, page);
-		//System.out.println("split leaf: "+page+" old parent "+parent);
 		if(parent == 0){
 			int rootPage = makeInteriorPage(file);
 			setParent(file, page, rootPage);
-			//System.out.println("split leaf: set parent "+page+" point to "+rootPage);
 			setParent(file, newPage, rootPage);
-			//System.out.println("split leaf: set parent "+newPage+" point to "+rootPage);
 			setRightMost(file, rootPage, newPage);
-			//System.out.println("split leaf: set right most "+rootPage+" point to "+newPage);
 			insertInteriorCell(file, rootPage, page, midKey);
 		}else{
 			long ploc = getPointerLoc(file, page, parent);
@@ -281,9 +257,7 @@ public class Page{
 			insertInteriorCell(file, parent, page, midKey);
 			sortCellArray(file, parent);
 			while(checkInteriorSpace(file, parent)){
-				//System.out.println();
 				parent = splitInterior(file, parent);
-				//System.out.println("split inter page "+parent);
 			}
 		}
 	}
@@ -292,24 +266,18 @@ public class Page{
 	public static int splitInterior(RandomAccessFile file, int page){
 		int newPage = makeInteriorPage(file);
 		int midKey = findMidKey(file, page);
-		//System.out.println("split inter: "+page+" --> "+newPage);
 		splitInteriorPage(file, page, newPage);
 		int parent = getParent(file, page);
-		//System.out.println("split inter: "+page+" old parent "+parent);
 		if(parent == 0){
 			int rootPage = makeInteriorPage(file);
 			setParent(file, page, rootPage);
-			//System.out.println("split inter: set parent "+page+" point to "+rootPage);
 			setParent(file, newPage, rootPage);
-			//System.out.println("split inter: set parent "+newPage+" point to "+rootPage);
 			setRightMost(file, rootPage, newPage);
-			//System.out.println("split inter: set right most "+rootPage+" point to "+newPage);
 			insertInteriorCell(file, rootPage, page, midKey);
 			return rootPage;
 		}else{
 			long ploc = getPointerLoc(file, page, parent);
 			setPointerLoc(file, ploc, parent, newPage);
-			//System.out.println("split inter: set pointer "+parent+" point to "+page);
 			insertInteriorCell(file, parent, page, midKey);
 			sortCellArray(file, parent);
 			return parent;
@@ -350,7 +318,6 @@ public class Page{
 
 	public static int[] getKeyArray(RandomAccessFile file, int page){
 		int num = new Integer(getCellNumber(file, page));
-		//System.out.println("Number of cell is: "+num);
 		int[] array = new int[num];
 
 		try{
@@ -371,10 +338,8 @@ public class Page{
 
 			for(int i = 0; i < num; i++){
 				long loc = getCellLoc(file, page, i);
-				//System.out.println("Location is: "+loc);
 				file.seek(loc+offset);
 				array[i] = file.readInt();
-				//System.out.println("has key "+array[i]);
 			}
 
 		}catch(Exception e){
@@ -418,8 +383,6 @@ public class Page{
 		try{
 			file.seek((page-1)*pageSize+8);
 			file.writeInt(parent);
-			// byte pageType = file.readByte();
-			// int numCells = new Integer(file.readByte());
 		}catch(Exception e){
 			System.out.println("Error at setParent");
 		}
@@ -432,10 +395,8 @@ public class Page{
 			int numCells = new Integer(getCellNumber(file, parent));
 			for(int i=0; i < numCells; i++){
 				long loc = getCellLoc(file, parent, i);
-				//System.out.println("Cell location: "+loc);
 				file.seek(loc);
 				int childPage = file.readInt();
-				//System.out.println("The "+i+" child page number is: "+childPage);
 				if(childPage == page){
 					val = loc;
 				}
@@ -492,22 +453,13 @@ public class Page{
 	// insert a cell in to leaf page
 	public static void insertLeafCell(RandomAccessFile file, int page, int offset, short plsize, int key, byte[] stc, String[] vals){
 		try{
-			// for(String s: vals){
-			// 	System.out.println(s);
-			// }
 			String s;
 			file.seek((page-1)*pageSize+offset);
-			//System.out.println("write at "+file.getFilePointer()+" value "+plsize);
 			file.writeShort(plsize);
-			//System.out.println("write at "+file.getFilePointer()+" value "+key);
 			file.writeInt(key);
 			int col = vals.length - 1;
-			//System.out.println("write at "+file.getFilePointer()+" value "+col);
 			file.writeByte(col);
-			//System.out.println("stc length: "+stc.length);
 			file.write(stc);
-			// for(byte s: stc)
-			// 	System.out.println(s);
 			for(int i = 1; i < vals.length; i++){
 				switch(stc[i-1]){
 					case 0x00:
@@ -547,7 +499,6 @@ public class Page{
 						file.writeLong(time);
 						break;
 					case 0x0B:
-						//System.out.println(vals[i]);
 						s = vals[i];
 						s = s.substring(1, s.length()-1);
 						s = s+"_00:00:00";
@@ -556,10 +507,7 @@ public class Page{
 						file.writeLong(time2);
 						break;
 					default:
-						// s = vals[i];
-						// s = s.substring(1,s.length()-1);
 						file.writeBytes(vals[i]);
-						//file.writeBytes(s);
 						break;
 				}
 			}
@@ -584,14 +532,10 @@ public class Page{
 		try{
 			String s;
 			file.seek((page-1)*pageSize+offset);
-			//System.out.println("write at "+file.getFilePointer()+" value "+plsize);
 			file.writeShort(plsize);
-			//System.out.println("write at "+file.getFilePointer()+" value "+key);
 			file.writeInt(key);
 			int col = vals.length - 1;
-			//System.out.println("write at "+file.getFilePointer()+" value "+col);
 			file.writeByte(col);
-			//System.out.println("stc length: "+stc.length);
 			file.write(stc);
 			for(int i = 1; i < vals.length; i++){
 				switch(stc[i-1]){
@@ -632,7 +576,6 @@ public class Page{
 						file.writeLong(time);
 						break;
 					case 0x0B:
-						//System.out.println(vals[i]);
 						s = vals[i];
 						s = s.substring(1, s.length()-1);
 						s = s+"_00:00:00";
@@ -641,10 +584,7 @@ public class Page{
 						file.writeLong(time2);
 						break;
 					default:
-						// s = vals[i];
-						// s = s.substring(1,s.length()-1);
 						file.writeBytes(vals[i]);
-						//file.writeBytes(s);
 						break;
 				}
 			}
@@ -683,10 +623,8 @@ public class Page{
 		byte val = 0;
 
 		try{
-			//System.out.println("page :"+page);
 			file.seek((page-1)*pageSize+1);
 			val = file.readByte();
-			//System.out.println("cell num :"+val);
 		}catch(Exception e){
 			System.out.println(e);
 			System.out.println("Error at getCellNumber");
@@ -726,21 +664,6 @@ public class Page{
 			int space = content - 20 - 2*numCells;
 			if(size < space)
 				return content - size;
-			// else{
-			// 	short[] array = getCellArray(file, page);
-			// 	for(short offsetA : array){
-			// 		file.seek((page-1)*pageSize+offsetA);
-			// 		int cellSize = 2+4+file.readShort();
-			// 		int endOffset = offsetA + cellSize + size;
-			// 		boolean flag = true;
-			// 		for(short offsetB : array)
-			// 			if((offsetB > offsetA) && (offsetB < endOffset)){
-			// 				flag = false;
-			// 				break;
-			// 			}
-			// 		if(flag)
-			// 			return offsetA + cellSize;
-			// 	}
 			
 		}catch(Exception e){
 			System.out.println("Error at checkLeafSpace");
@@ -758,18 +681,14 @@ public class Page{
 		return false;
 	}
 
-	//public static void rewriteData(RandomAccessFile file, int page, String value, String dateType, int key, int colPos){}
-
 	// read loaction of cell in the page, id starts at 0
 	public static long getCellLoc(RandomAccessFile file, int page, int id){
-		//System.out.println("Getting cell location of page "+page+" child "+id);
 		long loc = 0;
 		try{
 			file.seek((page-1)*pageSize+12+id*2);
 			short offset = file.readShort();
 			long orig = (page-1)*pageSize;
 			loc = orig + offset;
-			//System.out.println("Cell location: "+loc);
 		}catch(Exception e){
 			System.out.println("Error at getCellLoc");
 		}
@@ -781,7 +700,6 @@ public class Page{
 		try{
 			file.seek((page-1)*pageSize+12+id*2);
 			offset = file.readShort();
-			//System.out.println("Cell location: "+loc);
 		}catch(Exception e){
 			System.out.println("Error at getCellOffset");
 		}
@@ -792,7 +710,6 @@ public class Page{
 		try{
 			file.seek((page-1)*pageSize+12+id*2);
 			file.writeShort(offset);
-			//System.out.println("Cell location: "+loc);
 		}catch(Exception e){
 			System.out.println("Error at setCellOffset");
 		}
